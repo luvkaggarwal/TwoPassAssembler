@@ -11,15 +11,12 @@ def firstPass(code):
     symbolTable = []
     counter = 0
     flag = -1
+
     for line in code:
-        for word in line.split():
-            if word == 'ORG':
-                flag = 1
-            elif flag == 1:
-                counter = int(word) - 1
-                flag = -1
-            elif word == 'DEC' or word == 'HEX':
-                symbolTable.append([processLine(line),counter])
+        if line.split()[0] == 'ORG':
+            counter = int( line.split()[1] ) - 1
+        elif len( line.split(',') ) > 1 :
+            symbolTable.append([line.split(',')[0],counter])
         counter += 1            
     return symbolTable
 
