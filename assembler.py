@@ -2,10 +2,10 @@
 Code to implement a 2 Pass Assembler in Python that will take in Assembly Code and Produce a Binary Code
 """
 
+# Function to return label
 def processLine(line):
-    return ""
-        
-
+    return line.split(',')[0]
+    
 # Function to generate symbol table using the first pass
 def firstPass(code):
     symbolTable = []
