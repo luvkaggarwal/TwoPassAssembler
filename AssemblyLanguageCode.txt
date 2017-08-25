@@ -1,4 +1,4 @@
-﻿ORG 100
+ORG 100
 LDA SUB
 CMA
 INC
