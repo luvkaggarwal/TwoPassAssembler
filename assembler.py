@@ -1,2 +1,4 @@
-code = open("AssemblyLanguageCode.text")
-print code
+code = open("AssemblyLanguageCode.txt")
+
+for word in code.read().split():
+    print word
