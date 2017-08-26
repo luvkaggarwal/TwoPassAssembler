@@ -2,6 +2,8 @@
 Code to implement a 2 Pass Assembler in Python that will take in Assembly Code and Produce a Binary Code
 """
 
+import pandas as pd
+
 # Function to return label
 def processLine(line):
     return line.split(',')[0]
@@ -21,7 +23,8 @@ def firstPass(code):
     return symbolTable
 
 # Main working of the code begins here
-code = open("AssemblyLanguageCode.txt")
-
+code = open("SampleCode1.txt")
+instructionSet = pd.read_csv("8085InstructionSet.csv")
 symbolTable = firstPass(code)
-print symbolTable
+print code
+print instructionSet
