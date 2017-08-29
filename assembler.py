@@ -6,18 +6,24 @@ import pandas as pd
     
 # Function to generate symbol table using the first pass
 def firstPass(instructionSet):
-    symbolTable = []
+    symbols = []
+    lowerByte = []
+    higherByte = []
     counter = 0
     code = open("SampleCode1.txt")
     for line in code:
         line = line.strip()
+        if len( line.split(':') ) > 1 :
+            hexcode = hex(counter)[2:]
+            symbols.append(line.split(':')[0])
+            lowerByte.append(hexcode[2:])
+            higherByte.append(hexcode[:2])
+            line = line.split(':')[1]
+            line = line[2:]
         if line == 'END':
-            return symbolTable
+            break
         elif line.split()[0] == 'ORG':
-            counter = int( line.split()[1] )
-        elif len( line.split(':') ) > 1 :
-            symbolTable.append([line.split(':')[0],counter%100,counter/100])
-            counter += 1
+            counter = int( line.split()[1],16 )
         elif len( instructionSet[ instructionSet['Mnemonic'] == line ] ) > 0:
             counter +=1
         elif len( line.split(',') ) > 1:
@@ -28,41 +34,102 @@ def firstPass(instructionSet):
                 counter +=3
         else:
             counter += 3
-    return symbolTable
+    symbolFrame = pd.DataFrame()
+    symbolFrame['Symbol'] = symbols
+    symbolFrame['lowerByte'] = lowerByte
+    symbolFrame['higherByte'] = higherByte
+    return symbolFrame
 
 # Function to generate symbol table using the first pass
-def secondPass(instructionSet,symbolTable):
+def secondPass(instructionSet,symbolFrame):
     counter = 0
-    codeTable = []
+    hexcodes = []
+    bincodes = []
+    counterPositions = []
+    lineOfCode = []
     code = open("SampleCode1.txt")
     for line in code:
         line = line.strip()
+        if len( line.split(':') ) > 1 :
+            line = line.split(':')[1]
+            line = line[1:]
         if line == 'END':
-            return codeTable
+            break
         elif line.split()[0] == 'ORG':
-            counter = int( line.split()[1] )
-        elif len( line.split(':') ) > 1 :
-            counter += 1
+            counter = int( line.split()[1],16 )
         elif len( instructionSet[ instructionSet['Mnemonic'] == line ] ) > 0:
             hexcode = instructionSet[ instructionSet['Mnemonic'] == line ]['Hex'].to_string(index=False)
-            print hexcode
             bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
-            codeTable.append([counter,bincode])
+            hexcodes.append(hexcode)
+            bincodes.append(bincode)
+            counterPositions.append(hex(counter)[2:])
+            lineOfCode.append(line)
             counter += 1
-            print "I am here",counter
         elif len( line.split(',') ) > 1:
+            hexcode = instructionSet[ instructionSet['Mnemonic'] == line.split(',')[0] ]['Hex'].to_string(index=False)
+            bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
+            hexcodes.append(hexcode)
+            bincodes.append(bincode)
+            counterPositions.append(hex(counter)[2:])
+            lineOfCode.append(line.split(',')[0])
+            counter += 1
             word = line.split(',')[1]
             if len( word ) == 3:
-                counter += 2
+                hexcode = word[:2]
+                bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
+                hexcodes.append(hexcode)
+                bincodes.append(bincode)
+                counterPositions.append(hex(counter)[2:])
+                lineOfCode.append(line.split(',')[0])
+                counter += 1
             else:
-                counter +=3
+                hexcode = word[2:4]
+                bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
+                hexcodes.append(hexcode)
+                bincodes.append(bincode)
+                counterPositions.append(hex(counter)[2:])
+                lineOfCode.append(hexcode)
+                counter += 1
+                hexcode = word[:2]
+                bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
+                hexcodes.append(hexcode)
+                bincodes.append(bincode)
+                counterPositions.append(hex(counter)[2:])
+                lineOfCode.append(hexcode)
+                counter += 1
         else:
-            counter += 3
-    return codeTable
+            hexcode = instructionSet[ instructionSet['Mnemonic'] == line.split()[0] ]['Hex'].to_string(index=False)
+            bincode = ( bin(int(hexcode, 16))[2:] ).zfill(8)
+            hexcodes.append(hexcode)
+            bincodes.append(bincode)
+            counterPositions.append(hex(counter)[2:])
+            lineOfCode.append(line.split()[0])
+            counter += 1
+            symbol = symbolFrame[ symbolFrame['Symbol'] == line.split()[1] ]
+            byte = symbol['lowerByte'].to_string(index=False)
+            bincode = ( bin(int(byte, 16))[2:] ).zfill(8)
+            hexcodes.append(byte)
+            bincodes.append(bincode)
+            counterPositions.append(hex(counter)[2:])
+            lineOfCode.append(symbol['Symbol'].to_string(index=False))
+            counter += 1
+            byte = symbol['higherByte'].to_string(index=False)
+            bincode = ( bin(int(byte, 16))[2:] ).zfill(8)
+            hexcodes.append(byte)
+            bincodes.append(bincode)
+            counterPositions.append(hex(counter)[2:])
+            lineOfCode.append(symbol['Symbol'].to_string(index=False))
+            counter += 1
+    
+    frame = pd.DataFrame()
+    frame['Counter'] = counterPositions
+    frame['Code'] = lineOfCode
+    frame['HexCode'] = hexcodes
+    frame['BinaryCode'] = bincodes
+    return frame
 
 # Main working of the code begins here
 instructionSet = pd.read_csv("8085InstructionSet.csv")
-print instructionSet
-symbolTable = firstPass(instructionSet)
-codeTable = secondPass(instructionSet,symbolTable)
-print codeTable
+symbolFrame = firstPass(instructionSet)
+frame = secondPass(instructionSet,symbolFrame)
+print frame
